@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Mistério da Casa Oliveira</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#120606;color:#fff;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 0,#8d1515 0,#350909 35%,#120606 75%);z-index:-1}
+.app{width:min(920px,94%);margin:30px auto;padding-bottom:40px}
+header{text-align:center;padding:25px 15px}
+.badge{display:inline-block;background:#ff1e1e;padding:7px 14px;border-radius:30px;font-weight:bold;font-size:12px;letter-spacing:2px}
+h1{font-size:clamp(30px,7vw,54px);margin:15px 0 8px;text-shadow:0 4px 18px #000}
+.subtitle{color:#f3b2b2}
+.card{background:rgba(28,7,7,.92);border:1px solid #9f2a2a;border-radius:20px;padding:25px;box-shadow:0 15px 45px #0008;margin-top:18px}
+h2{margin-top:0;color:#ff5353}
+.story{line-height:1.65;color:#f4dddd;font-size:17px}
+.clue{border-left:4px solid #ff2525;background:#350d0d;padding:15px;margin:18px 0;border-radius:8px}
+.choices{display:grid;gap:12px;margin-top:20px}
+button{border:1px solid #d83a3a;background:#4b0e0e;color:white;padding:15px 18px;border-radius:12px;font-size:16px;text-align:left;cursor:pointer;transition:.2s}
+button:hover{background:#8f1717;transform:translateY(-2px)}
+button.correct{background:#166b38;border-color:#38c878}
+button.wrong{background:#721919;border-color:#ff5454}
+#feedback{margin-top:16px;font-weight:bold;min-height:25px}
+.progress{height:8px;background:#351010;border-radius:20px;overflow:hidden;margin:10px 0 20px}
+.bar{height:100%;background:#f22;width:20%;transition:.3s}
+.small{font-size:13px;color:#c99}
+.restart{text-align:center;margin-top:20px}
+.restart button{text-align:center;background:#b81818}
+.ending{text-align:center}
+.ending h2{font-size:32px}
+.good{color:#55e28d}.bad{color:#ff5b5b}
+
+.pt{display:block;color:#f0baba;font-size:.92em;margin-top:7px;line-height:1.45}
+small{font-size:.72em;color:#f1aaaa;font-weight:normal}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<span class="badge">JOGO DE MISTÉRIO</span>
+<h1>The Mystery of the Oliveira House</h1><div class="subtitle">O Mistério da Casa Oliveira</div>
+<div class="subtitle">Discover who is behind the crime.<br><small>Descubra quem está por trás do crime.</small></div>
+</header>
+<div class="card">
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="game"></div>
+</div>
+</div>
+
+<script>
+const game=document.getElementById("game"), bar=document.getElementById("bar");
+let step=0, clues=0;
+
+const scenes=[
+{title:"🌩️ A Strange Night<span class=\"pt\">Uma noite estranha</span>",
+text:`During a storm, Lucas, 17, disappears during dinner. Soon after, Henrique, his father, finds his son dead in the bedroom. The police were called, but the road is blocked.<span class=\"pt\">Durante uma tempestade, Lucas, de 17 anos, desaparece durante o jantar. Pouco depois, Henrique, seu pai, encontra o filho morto no quarto. A polícia foi chamada, mas a estrada está bloqueada.</span><br><br><b>The killer is still inside the house.</b><span class=\"pt\"><b>O assassino ainda está dentro da casa.</b></span><br><br>The family members are Helena, Roberto, Clara and Antônio, plus the employee Marcos.<span class=\"pt\">Os familiares são Helena, Roberto, Clara e Antônio, além do funcionário Marcos.</span>`,
+buttons:[["Investigate the bedroom<span class=\"pt\">Investigar o quarto</span>",1]]},
+
+{title:"🔎 Phase 1 — The Bedroom<span class=\"pt\">Fase 1 — O quarto</span>",
+text:`In Lucas's bedroom there are three clues: a broken clock showing <b>10:15 PM</b>, a note saying “The truth is where nobody looks,” and a small key under the bed.<span class=\"pt\">No quarto de Lucas há três pistas: um relógio quebrado marcando <b>22:15</b>, um bilhete dizendo “A verdade está onde ninguém procura” e uma pequena chave embaixo da cama.</span><div class=\"clue\">🧩 RIDDLE<span class=\"pt\">CHARADA</span><br><br>“I have teeth, but I don't bite. I open doors, but I am not a person. What am I?”<span class=\"pt\">“Tenho dentes, mas não mordo. Abro portas, mas não sou pessoa. O que sou?”</span></div>`,
+buttons:[["A) Clock<span class=\"pt\">Relógio</span>",3],["B) Key<span class=\"pt\">Chave</span>",2],["C) Window<span class=\"pt\">Janela</span>",3]]},
+
+{title:"🔑 Phase 2 — The Key<span class=\"pt\">Fase 2 — A chave</span>",
+text:`The key opens a locked drawer in the library. Inside you find an old family photograph and a receipt dated the night of the crime.<span class=\"pt\">A chave abre uma gaveta trancada na biblioteca. Dentro, você encontra uma fotografia antiga da família e um recibo datado da noite do crime.</span>`,
+buttons:[["Examine the receipt<span class=\"pt\">Examinar o recibo</span>",4],["Ignore it<span class=\"pt\">Ignorar</span>",4]]},
+
+{title:"📚 Phase 3 — The Library<span class=\"pt\">Fase 3 — A biblioteca</span>",
+text:`Behind the photograph is a message: <b>“Whoever lies first is hiding the biggest secret.”</b><span class=\"pt\"><b>“Quem mente primeiro, esconde o maior segredo.”</b></span><br><br>The receipt has the initials R.O. and the exact time 9:40 PM.<span class=\"pt\">O recibo tem as iniciais R.O. e o horário exato de 21:40.</span>`,
+buttons:[["Compare the initials<span class=\"pt\">Comparar as iniciais</span>",5]]},
+
+{title:"🕰️ Phase 4 — The Hallway Clock<span class=\"pt\">Fase 4 — O relógio do corredor</span>",
+text:`The hallway clock stopped at 9:50 PM. A fresh scratch is visible near the clock.<span class=\"pt\">O relógio do corredor parou às 21:50. Há um arranhão recente perto do relógio.</span><div class=\"clue\">The scratch suggests someone moved the clock.<span class=\"pt\">O arranhão indica que alguém mexeu no relógio.</span></div>`,
+buttons:[["Inspect the scratch<span class=\"pt\">Investigar o arranhão</span>",6]]},
+
+{title:"🧤 Phase 5 — The Glove<span class=\"pt\">Fase 5 — A luva</span>",
+text:`Near the stairs, Henrique finds a dark glove with a small silver button attached to it.<span class=\"pt\">Perto da escada, Henrique encontra uma luva escura com um pequeno botão prateado preso nela.</span>`,
+buttons:[["Keep the glove as evidence<span class=\"pt\">Guardar a luva como prova</span>",7]]},
+
+{title:"🗣️ Phase 6 — The Statements<span class=\"pt\">Fase 6 — Os depoimentos</span>",
+text:`Roberto: “I was in the living room at 10:15 PM.”<span class=\"pt\">Roberto: “Eu estava na sala às 22:15.”</span><br>Helena: “I was making tea.”<span class=\"pt\">Helena: “Eu estava fazendo chá.”</span><br>Clara: “I was in the bathroom.”<span class=\"pt\">Clara: “Eu estava no banheiro.”</span><br>Antônio: “I was sleeping.”<span class=\"pt\">Antônio: “Eu estava dormindo.”</span><br>Marcos: “I was in the kitchen.”<span class=\"pt\">Marcos: “Eu estava na cozinha.”</span><div class=\"clue\">The living-room clock was stopped at <b>9:50 PM</b>, but Roberto said he looked at it at <b>10:15 PM</b>.<span class=\"pt\">O relógio da sala estava parado às <b>21:50</b>, mas Roberto disse que olhou para ele às <b>22:15</b>.</span></div>`,
+buttons:[["A) Roberto<span class=\"pt\">Roberto</span>",8],["B) Helena<span class=\"pt\">Helena</span>",9],["C) Marcos<span class=\"pt\">Marcos</span>",9]]},
+
+{title:"📱 Phase 7 — Lucas's Phone<span class=\"pt\">Fase 7 — O celular de Lucas</span>",
+text:`Lucas's phone contains one unsent message: <b>“R.O. knows about the money.”</b><span class=\"pt\">O celular de Lucas contém uma mensagem não enviada: <b>“R.O. sabe sobre o dinheiro.”</b></span>`,
+buttons:[["Save the message<span class=\"pt\">Guardar a mensagem</span>",10]]},
+
+{title:"💰 Phase 8 — The Missing Money<span class=\"pt\">Fase 8 — O dinheiro desaparecido</span>",
+text:`A folder shows that money disappeared from the family business. The withdrawals were made using information only two people knew.<span class=\"pt\">Uma pasta mostra que dinheiro desapareceu da empresa da família. Os saques foram feitos usando informações que apenas duas pessoas conheciam.</span>`,
+buttons:[["Check the company records<span class=\"pt\">Verificar os registros da empresa</span>",11]]},
+
+{title:"🧾 Phase 9 — The Receipt<span class=\"pt\">Fase 9 — O recibo</span>",
+text:`The receipt from 9:40 PM is from a store near the house. The seller remembers a man wearing a dark jacket and a silver button.<span class=\"pt\">O recibo das 21:40 é de uma loja perto da casa. O vendedor se lembra de um homem usando uma jaqueta escura com um botão prateado.</span>`,
+buttons:[["Compare the jacket<span class=\"pt\">Comparar a jaqueta</span>",12]]},
+
+{title:"🧥 Phase 10 — The Jacket<span class=\"pt\">Fase 10 — A jaqueta</span>",
+text:`Roberto's jacket is missing one silver button. The shape matches the button found on the glove.<span class=\"pt\">A jaqueta de Roberto está sem um botão prateado. O formato combina com o botão encontrado na luva.</span>`,
+buttons:[["Record the evidence<span class=\"pt\">Registrar a prova</span>",13]]},
+
+{title:"🗄️ Phase 11 — The Office<span class=\"pt\">Fase 11 — O escritório</span>",
+text:`In the office, Henrique finds a locked cabinet. A label reads “Lucas — private.”<span class=\"pt\">No escritório, Henrique encontra um armário trancado. Uma etiqueta diz “Lucas — particular”.</span>`,
+buttons:[["Search for the cabinet key<span class=\"pt\">Procurar a chave do armário</span>",14]]},
+
+{title:"🔐 Phase 12 — The Cabinet<span class=\"pt\">Fase 12 — O armário</span>",
+text:`Inside the cabinet are copies of company documents and a list of secret payments. Several entries are signed R.O.<span class=\"pt\">Dentro do armário há cópias de documentos da empresa e uma lista de pagamentos secretos. Vários registros estão assinados R.O.</span>`,
+buttons:[["Photograph the documents<span class=\"pt\">Fotografar os documentos</span>",15]]},
+
+{title:"🎥 Phase 13 — The Security Room<span class=\"pt\">Fase 13 — A sala de segurança</span>",
+text:`A security monitor shows a recording from the night of the crime. The camera near Lucas's bedroom was disabled for eight minutes.<span class=\"pt\">Um monitor de segurança mostra uma gravação da noite do crime. A câmera perto do quarto de Lucas foi desligada por oito minutos.</span>`,
+buttons:[["Check who had access<span class=\"pt\">Verificar quem tinha acesso</span>",16]]},
+
+{title:"🖥️ Phase 14 — Access Log<span class=\"pt\">Fase 14 — Registro de acesso</span>",
+text:`The access log shows that Roberto entered the security room shortly before the camera was disabled.<span class=\"pt\">O registro de acesso mostra que Roberto entrou na sala de segurança pouco antes de a câmera ser desligada.</span>`,
+buttons:[["Save the access log<span class=\"pt\">Guardar o registro de acesso</span>",17]]},
+
+{title:"🧩 Phase 15 — The Timeline<span class=\"pt\">Fase 15 — A linha do tempo</span>",
+text:`The clues create a timeline: 9:40 PM — receipt. 9:50 PM — clock stopped. 10:15 PM — Roberto's suspicious statement. Then the camera is disabled.<span class=\"pt\">As pistas formam uma linha do tempo: 21:40 — recibo. 21:50 — relógio parou. 22:15 — depoimento suspeito de Roberto. Depois, a câmera é desligada.</span>`,
+buttons:[["Build the timeline<span class=\"pt\">Montar a linha do tempo</span>",18]]},
+
+{title:"📝 Phase 16 — The Secret Note<span class=\"pt\">Fase 16 — O bilhete secreto</span>",
+text:`Behind a drawer Henrique finds Lucas's final note: <b>“If something happens to me, check the security recording.”</b><span class=\"pt\">Atrás de uma gaveta, Henrique encontra o último bilhete de Lucas: <b>“Se algo acontecer comigo, verifique a gravação de segurança.”</b></span>`,
+buttons:[["Go to the security room<span class=\"pt\">Ir para a sala de segurança</span>",19]]},
+
+{title:"🎬 Phase 17 — The Recording<span class=\"pt\">Fase 17 — A gravação</span>",
+text:`The recording shows Roberto entering Lucas's bedroom shortly before the camera is disabled. His jacket is visible, including the missing silver button.<span class=\"pt\">A gravação mostra Roberto entrando no quarto de Lucas pouco antes de a câmera ser desligada. Sua jaqueta aparece na imagem, incluindo o botão prateado que faltava.</span>`,
+buttons:[["Collect the recording<span class=\"pt\">Guardar a gravação</span>",20]]},
+
+{title:"⚖️ Phase 18 — The Final Evidence<span class=\"pt\">Fase 18 — A prova final</span>",
+text:`The phone message, receipt, glove, jacket, documents, access log and recording all point to the same suspect.<span class=\"pt\">A mensagem do celular, o recibo, a luva, a jaqueta, os documentos, o registro de acesso e a gravação apontam para o mesmo suspeito.</span><div class=\"clue\">The evidence must be given to the police.<span class=\"pt\">As provas devem ser entregues à polícia.</span></div>`,
+buttons:[["Call the police<span class=\"pt\">Chamar a polícia</span>",21]]},
+
+{title:"🚪 Phase 19 — The Final Decision<span class=\"pt\">Fase 19 — A decisão final</span>",
+text:`Henrique finds Roberto trying to leave the house. Roberto says: “You don't know anything! Get out of my way!”<span class=\"pt\">Henrique encontra Roberto tentando sair da casa. Roberto diz: “Você não sabe de nada! Saia da minha frente!”</span><br><br>What should Henrique do?<span class=\"pt\">O que Henrique deve fazer?</span>`,
+buttons:[["A) Confront Roberto alone<span class=\"pt\">Confrontar Roberto sozinho</span>",22],["B) Stay safe and wait for the police<span class=\"pt\">Ficar em segurança e esperar a polícia</span>",23],["C) Let Roberto leave<span class=\"pt\">Deixar Roberto ir embora</span>",22]]},
+
+{title:"❌ BAD ENDING<span class=\"pt\">FINAL RUIM</span>",
+text:`Henrique acts without waiting for help. Roberto escapes before the police arrive.<span class=\"pt\">Henrique age sem esperar ajuda. Roberto foge antes da chegada da polícia.</span><br><br><b>The investigation failed.</b><span class=\"pt\"><b>A investigação falhou.</b></span>`,
+buttons:[["Play again<span class=\"pt\">Jogar novamente</span>",0]],end:true,bad:true},
+
+{title:"🏆 GOOD ENDING<span class=\"pt\">FINAL BOM</span>",
+text:`Henrique stays safe and gives the police all the evidence. The recording, documents and other clues connect Roberto to the crime. Roberto is arrested and the truth is finally revealed.<span class=\"pt\">Henrique fica em segurança e entrega todas as provas à polícia. A gravação, os documentos e as outras pistas ligam Roberto ao crime. Roberto é preso e a verdade finalmente é revelada.</span><br><br><b>Case solved!</b><span class=\"pt\"><b>Caso solucionado!</b></span>`,
+buttons:[["Play again<span class=\"pt\">Jogar novamente</span>",0]],end:true,good:true}
+];
+
+function render(i){
+step=i; const s=scenes[i]; bar.style.width=Math.min(100,((i+1)/24)*100)+"%";
+game.innerHTML=`<h2>${s.title}</h2><div class="story">${s.text}</div><div class="choices"></div><div id="feedback"></div>`;
+if(s.end){game.querySelector("h2").className=s.good?"good":"bad"}
+const choices=game.querySelector(".choices");
+s.buttons.forEach(([label,next])=>{
+ const b=document.createElement("button"); b.innerHTML=label;
+ b.onclick=()=>{ if(next===3) clues++; render(next); window.scrollTo({top:0,behavior:"smooth"}); };
+ choices.appendChild(b);
+});
+}
+render(0);
+</script>
+</body>
+</html>
